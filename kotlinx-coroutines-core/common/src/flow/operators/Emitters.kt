@@ -54,6 +54,15 @@ internal inline fun <T, R> Flow<T>.unsafeTransform(
     }
 }
 
+public inline fun <T, R> Flow<T>.statefulTransform(
+    @BuilderInference crossinline transformSupplier: suspend () -> (suspend FlowCollector<R>.(value: T) -> Unit)): Flow<R> = flow {
+    val transform = transformSupplier()
+    collect { value ->
+        // kludge, without it Unit will be returned and TCE won't kick in, KT-28938
+        return@collect transform(value)
+    }
+}
+
 /**
  * Returns a flow that invokes the given [action] **before** this flow starts to be collected.
  *
